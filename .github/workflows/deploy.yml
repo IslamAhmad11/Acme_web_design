@@ -19,14 +19,9 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: .
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
       - name: Quality Check (The Inspector)
         run: |
           echo "Checking if index.html exists..."
           ls index.html
           echo "Checking for forbidden words..."
           ! grep "TODO" index.html
-
