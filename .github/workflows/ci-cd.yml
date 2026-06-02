@@ -1,8 +1,13 @@
+
 name: CI/CD Pipeline
 
 on:
   push:
-    branches: [master]
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
 
 env:
   DOCKER_IMAGE: islamahmad9/my-acme-website
@@ -33,6 +38,8 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -52,7 +59,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: '${{ secrets.GKE_SA_KEY }}'
+          workload_identity_provider: 'projects/533499523141/locations/global/workloadIdentityPools/github-final-pool/providers/github-final-provider'
+          service_account: 'terraform-local@project-0504e4c0-5823-4296-881.iam.gserviceaccount.com'
 
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
@@ -81,7 +89,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: '${{ secrets.GKE_SA_KEY }}'
+          workload_identity_provider: 'projects/533499523141/locations/global/workloadIdentityPools/github-final-pool/providers/github-final-provider'
+          service_account: 'terraform-local@project-0504e4c0-5823-4296-881.iam.gserviceaccount.com'
 
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
