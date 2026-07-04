@@ -36,6 +36,8 @@ resource "google_container_cluster" "primary" {
   remove_default_node_pool = true
   initial_node_count       = 1
 
+  deletion_protection = false
+
   # Security Best Practice: Enable Workload Identity on the Control Plane
   # This is REQUIRED before enabling GKE_METADATA on the Node Pool below
   workload_identity_config {

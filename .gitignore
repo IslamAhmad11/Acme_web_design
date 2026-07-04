@@ -4,5 +4,9 @@ terraform/terraform.tfvars
 *.tfstate.*
 .terraform/
 
+# Terraform plan files
+tfplan
+*.tfplan
+
 # Environment files (if any)
 .env
