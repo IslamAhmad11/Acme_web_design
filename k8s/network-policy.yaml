@@ -1,16 +1,18 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
+
 metadata:
   name: my-acme-netpol
+
 spec:
   podSelector:
     matchLabels:
       app: my-acme-website
+
   policyTypes:
-  - Ingress
+    - Ingress
+
   ingress:
-  - from:
-    - namespaceSelector: {}
-    ports:
-    - protocol: TCP
-      port: 80
+    - ports:
+        - protocol: TCP
+          port: 80

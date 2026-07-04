@@ -1,51 +1,64 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: my-acme-website
   labels:
     app: my-acme-website
+
 spec:
   replicas: 2
   revisionHistoryLimit: 3
+
   selector:
     matchLabels:
       app: my-acme-website
+
   template:
     metadata:
       labels:
         app: my-acme-website
+
     spec:
+      terminationGracePeriodSeconds: 30
+
+      securityContext:
+        fsGroup: 1000
+
       containers:
         - name: my-acme-website
           image: islamahmad9/my-acme-website:latest
           imagePullPolicy: Always
+
           ports:
             - containerPort: 80
+
           resources:
             requests:
-              memory: "64Mi"
               cpu: "100m"
+              memory: "64Mi"
             limits:
-              memory: "128Mi"
               cpu: "200m"
+              memory: "128Mi"
+
           readinessProbe:
             httpGet:
               path: /
               port: 80
             initialDelaySeconds: 5
             periodSeconds: 10
+
           livenessProbe:
             httpGet:
               path: /
               port: 80
             initialDelaySeconds: 15
             periodSeconds: 20
+
           securityContext:
-            allowPrivilegeEscalation: false
             runAsNonRoot: true
             runAsUser: 1000
+            allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
-      securityContext:
-        fsGroup: 1000

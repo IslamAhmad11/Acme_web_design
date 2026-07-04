@@ -1,27 +1,32 @@
-# Use lightweight alpine image
-FROM nginx:alpine
+# Use a specific lightweight Nginx image for reproducible builds
+FROM nginx:1.29-alpine
 
-# Update internal alpine packages to patch base image vulnerabilities (like CVE-2026-6732)
+# Image metadata
+LABEL maintainer="Islam Ahmad"
+LABEL description="Static website deployed using Docker, Kubernetes, Terraform, and Google Cloud Platform"
+LABEL version="1.0"
+
+# Update Alpine packages to patch known vulnerabilities
 RUN apk update && apk upgrade --no-cache
 
-# Create a non-root user and group for security hardening
+# Create a non-root user and group
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Copy only the needed static files (relies on .dockerignore to exclude .git, terraform, etc.)
+# Copy website files into the Nginx web root
 COPY . /usr/share/nginx/html
 
-# Set correct ownership for the non-root user to access required directories
+# Set correct ownership
 RUN chown -R appuser:appgroup /usr/share/nginx/html /var/cache/nginx /var/run
 
-# Switch execution context to the non-root user
+# Run the container as a non-root user
 USER appuser
 
-# Health check to periodically verify nginx is running and serving traffic
+# Verify that Nginx is serving traffic
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget -q --spider http://localhost:80 || exit 1
+    CMD wget -q --spider http://localhost:80 || exit 1
 
-# Document that the container listens on port 80
+# Document the listening port
 EXPOSE 80
 
-# Start Nginx in the foreground
+# Start Nginx
 CMD ["nginx", "-g", "daemon off;"]

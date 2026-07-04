@@ -52,7 +52,7 @@ resource "google_container_node_pool" "primary_nodes" {
 
   node_config {
     # Cost Optimization: Use e2-medium (2 vCPUs, 4 GB RAM) - the cheapest standard machine type for GKE
-    machine_type = "e2-medium" 
+    machine_type = "e2-medium"
 
     # Budget Control: 30GB standard persistent disk is more than enough for static websites (Acme)
     disk_size_gb = 30
