@@ -1,75 +1,107 @@
-# Google Provider Configuration using your variables
 provider "google" {
   project = var.project_id
   region  = var.region
 }
 
-# VPC Network Definition
+# --------------------------------------------------
+# Custom VPC
+# --------------------------------------------------
 resource "google_compute_network" "vpc_network" {
   name                    = "acme-web-cluster-vpc"
-  auto_create_subnetworks = false # Professional practice: always manage subnets manually
+  auto_create_subnetworks = false
 }
 
-# Custom Subnet for GKE Nodes
+# --------------------------------------------------
+# Private Subnet for GKE
+# --------------------------------------------------
 resource "google_compute_subnetwork" "gke_subnet" {
+
   name          = "acme-web-cluster-subnet"
   region        = var.region
   network       = google_compute_network.vpc_network.id
-  ip_cidr_range = "10.0.0.0/24" # Isolated range for cluster nodes
+  ip_cidr_range = "10.0.0.0/24"
+
+  # Kubernetes Pods
+  secondary_ip_range {
+    range_name    = "pods"
+    ip_cidr_range = "10.1.0.0/16"
+  }
+
+  # Kubernetes Services
+  secondary_ip_range {
+    range_name    = "services"
+    ip_cidr_range = "10.2.0.0/20"
+  }
 }
 
-# GKE Cluster Definition (Control Plane)
+# --------------------------------------------------
+# GKE Cluster
+# --------------------------------------------------
 resource "google_container_cluster" "primary" {
-  # NOTE: Cluster name is hardcoded to precisely match the GKE cluster name 
-  # expected by the GitHub Actions CI/CD deployment pipeline (`deploy.yaml`).
+
   name     = "acme-web-cluster"
-  location = var.region # Creates a regional cluster using your region variable
+  location = var.region
 
   network    = google_compute_network.vpc_network.name
   subnetwork = google_compute_subnetwork.gke_subnet.name
 
-  # Cost Optimization: Disable Cloud Logging and Monitoring services to avoid extra GCP charges
-  logging_service    = "none"
-  monitoring_service = "none"
-
-  # Professional Hardening: Delete the default node pool immediately after creation
   remove_default_node_pool = true
   initial_node_count       = 1
 
   deletion_protection = false
 
-  # Security Best Practice: Enable Workload Identity on the Control Plane
-  # This is REQUIRED before enabling GKE_METADATA on the Node Pool below
+  # Stable Kubernetes updates
+  release_channel {
+    channel = "REGULAR"
+  }
+
+  # Enable Cloud Logging
+  logging_service = "logging.googleapis.com/kubernetes"
+
+  # Enable Cloud Monitoring
+  monitoring_service = "monitoring.googleapis.com/kubernetes"
+
   workload_identity_config {
     workload_pool = "${var.project_id}.svc.id.goog"
   }
+
+  ip_allocation_policy {
+    cluster_secondary_range_name  = "pods"
+    services_secondary_range_name = "services"
+  }
 }
 
-# Custom Optimized Node Pool using your node_count variable
+# --------------------------------------------------
+# Custom Node Pool
+# --------------------------------------------------
 resource "google_container_node_pool" "primary_nodes" {
-  name       = "acme-web-cluster-node-pool"
-  location   = var.region
-  cluster    = google_container_cluster.primary.name
-  node_count = var.node_count # Professional practice: dynamically set via your variables.tf
+
+  name     = "acme-web-cluster-node-pool"
+  location = var.region
+  cluster  = google_container_cluster.primary.name
+
+  node_count = var.node_count
+
+  node_locations = [
+    "us-central1-a",
+    "us-central1-b"
+  ]
 
   node_config {
-    # Cost Optimization: Use e2-medium (2 vCPUs, 4 GB RAM) - the cheapest standard machine type for GKE
-    machine_type = "e2-medium"
 
-    # Budget Control: 30GB standard persistent disk is more than enough for static websites (Acme)
+    machine_type = var.machine_type
+
     disk_size_gb = 30
     disk_type    = "pd-standard"
 
-    # Security Best Practice: Enable GKE Metadata Server for secure workload federation
-    workload_metadata_config {
-      mode = "GKE_METADATA"
-    }
-
-    # IAM Scopes needed for basic cluster operations
     oauth_scopes = [
       "https://www.googleapis.com/auth/logging.write",
       "https://www.googleapis.com/auth/monitoring",
       "https://www.googleapis.com/auth/devstorage.read_only"
     ]
+
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
   }
 }
