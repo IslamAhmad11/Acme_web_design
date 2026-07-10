@@ -6,17 +6,24 @@ variable "project_id" {
 variable "region" {
   description = "Google Cloud Region"
   type        = string
-  default     = "us-central1"
 }
 
-variable "node_count" {
-  description = "Number of GKE Nodes"
-  type        = number
-  default     = 1
+variable "zone" {
+  description = "Google Cloud Zone"
+  type        = string
 }
 
 variable "machine_type" {
-  description = "GKE Machine Type"
+  description = "GKE node machine type"
   type        = string
-  default     = "e2-small"
+}
+
+variable "disk_size" {
+  description = "Boot disk size (GB)"
+  type        = number
+}
+
+variable "node_count" {
+  description = "Number of worker nodes"
+  type        = number
 }

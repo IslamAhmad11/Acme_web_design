@@ -3,44 +3,43 @@ provider "google" {
   region  = var.region
 }
 
-# --------------------------------------------------
+# ---------------------------------------
 # Custom VPC
-# --------------------------------------------------
+# ---------------------------------------
 resource "google_compute_network" "vpc_network" {
   name                    = "acme-web-cluster-vpc"
   auto_create_subnetworks = false
 }
 
-# --------------------------------------------------
-# Private Subnet for GKE
-# --------------------------------------------------
+# ---------------------------------------
+# Custom Subnet
+# ---------------------------------------
 resource "google_compute_subnetwork" "gke_subnet" {
-
   name          = "acme-web-cluster-subnet"
   region        = var.region
   network       = google_compute_network.vpc_network.id
   ip_cidr_range = "10.0.0.0/24"
 
-  # Kubernetes Pods
   secondary_ip_range {
     range_name    = "pods"
     ip_cidr_range = "10.1.0.0/16"
   }
 
-  # Kubernetes Services
   secondary_ip_range {
     range_name    = "services"
     ip_cidr_range = "10.2.0.0/20"
   }
 }
 
-# --------------------------------------------------
+# ---------------------------------------
 # GKE Cluster
-# --------------------------------------------------
+# ---------------------------------------
 resource "google_container_cluster" "primary" {
 
-  name     = "acme-web-cluster"
-  location = var.region
+  name = "acme-web-cluster"
+
+  # Single-zone cluster to reduce cost and avoid regional stockout
+  location = var.zone
 
   network    = google_compute_network.vpc_network.name
   subnetwork = google_compute_subnetwork.gke_subnet.name
@@ -50,17 +49,6 @@ resource "google_container_cluster" "primary" {
 
   deletion_protection = false
 
-  # Stable Kubernetes updates
-  release_channel {
-    channel = "REGULAR"
-  }
-
-  # Enable Cloud Logging
-  logging_service = "logging.googleapis.com/kubernetes"
-
-  # Enable Cloud Monitoring
-  monitoring_service = "monitoring.googleapis.com/kubernetes"
-
   workload_identity_config {
     workload_pool = "${var.project_id}.svc.id.goog"
   }
@@ -69,30 +57,30 @@ resource "google_container_cluster" "primary" {
     cluster_secondary_range_name  = "pods"
     services_secondary_range_name = "services"
   }
+
+  release_channel {
+    channel = "REGULAR"
+  }
 }
 
-# --------------------------------------------------
-# Custom Node Pool
-# --------------------------------------------------
+# ---------------------------------------
+# Node Pool
+# ---------------------------------------
 resource "google_container_node_pool" "primary_nodes" {
 
   name     = "acme-web-cluster-node-pool"
-  location = var.region
+  location = var.zone
   cluster  = google_container_cluster.primary.name
 
   node_count = var.node_count
-
-  node_locations = [
-    "us-central1-a",
-    "us-central1-b"
-  ]
 
   node_config {
 
     machine_type = var.machine_type
 
-    disk_size_gb = 30
-    disk_type    = "pd-standard"
+    disk_size_gb = var.disk_size
+
+    disk_type = "pd-standard"
 
     oauth_scopes = [
       "https://www.googleapis.com/auth/logging.write",
