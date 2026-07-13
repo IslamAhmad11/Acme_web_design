@@ -27,7 +27,7 @@ spec:
 
       containers:
         - name: my-acme-website
-          image: islamahmad9/my-acme-website:latest
+          image: islamahmad9/acme-web-design:v1
           imagePullPolicy: Always
 
           ports:
