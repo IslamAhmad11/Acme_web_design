@@ -27,7 +27,7 @@ spec:
 
       containers:
         - name: my-acme-website
-          image: islamahmad9/acme-web-design:v1
+          image: islamahmad9/acme-web-design:v4
           imagePullPolicy: Always
 
           ports:
@@ -39,7 +39,7 @@ spec:
               memory: "32Mi"
             limits:
               cpu: "100m"
-              memory: "64mi"
+              memory: "64Mi"
 
           readinessProbe:
             httpGet:
