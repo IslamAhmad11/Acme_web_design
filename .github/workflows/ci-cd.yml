@@ -2,7 +2,8 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -19,8 +20,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -28,8 +28,8 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v6
+      - name: Build & Push Docker Image
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
@@ -44,17 +44,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Scan Docker Image
+      - name: Run Trivy Scan
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.DOCKER_IMAGE }}:latest
           format: table
           exit-code: 0
           ignore-unfixed: true
-          vuln-type: os,library
           severity: HIGH,CRITICAL
 
-  deploy-to-gke:
+  deploy:
     needs: security-scan
     runs-on: ubuntu-latest
 
@@ -86,7 +85,7 @@ jobs:
           kubectl rollout status deployment/my-acme-website --timeout=180s
 
   health-check:
-    needs: deploy-to-gke
+    needs: deploy
     runs-on: ubuntu-latest
 
     steps:
@@ -109,16 +108,24 @@ jobs:
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GKE_ZONE }}
 
-      - name: Get External IP
-        id: ip
+      - name: Wait for External LoadBalancer IP
         run: |
-          IP=$(kubectl get svc my-acme-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          echo "external_ip=$IP" >> $GITHUB_OUTPUT
+          echo "Waiting for External IP..."
+          for i in {1..30}; do
+            IP=$(kubectl get svc my-acme-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            if [ ! -z "$IP" ]; then
+              echo "APP_URL=http://$IP" >> $GITHUB_ENV
+              echo "External IP: $IP"
+              exit 0
+            fi
+            echo "Still waiting..."
+            sleep 20
+          done
+          echo "Timed out waiting for External IP"
+          exit 1
 
-      - name: Install Requests
-        run: pip install requests
+      - name: Wait for Application
+        run: sleep 90
 
       - name: Run Health Check
-        env:
-          APP_URL: http://${{ steps.ip.outputs.external_ip }}
         run: python scripts/health_check.py

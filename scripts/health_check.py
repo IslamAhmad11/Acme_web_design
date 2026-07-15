@@ -1,18 +1,26 @@
 #!/usr/bin/env python3
-import requests
-import sys
+
 import os
+import sys
+import time
+import requests
 
-APP_URL = os.getenv("APP_URL", "http://localhost")
+url = os.getenv("APP_URL")
 
-try:
-    resp = requests.get(APP_URL, timeout=10)
-    if resp.status_code == 200:
-        print("Health check passed!")
-        sys.exit(0)
-    else:
-        print(f"Health check failed with status {resp.status_code}")
-        sys.exit(1)
-except Exception as e:
-    print(f"Error during health check: {e}")
+if not url:
+    print("APP_URL not found")
     sys.exit(1)
+
+for _ in range(12):
+    try:
+        r = requests.get(url, timeout=10)
+        if r.status_code == 200:
+            print("Health check passed.")
+            sys.exit(0)
+    except Exception:
+        pass
+
+    time.sleep(10)
+
+print("Health check failed.")
+sys.exit(1)
