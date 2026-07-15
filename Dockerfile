@@ -1,8 +1,8 @@
 FROM nginx:1.29-alpine
 
 LABEL maintainer="Islam Ahmad"
-LABEL description="Static website deployed using Docker, Kubernetes, Terraform and GKE"
-LABEL version="1.2"
+LABEL description="Static website deployed using Docker, Kubernetes, Terraform, GKE and GitHub Actions"
+LABEL version="1.3"
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
@@ -22,9 +22,9 @@ RUN mkdir -p \
 
 USER appuser
 
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 CMD wget -q --spider http://localhost || exit 1
 
 EXPOSE 80
 
-CMD ["nginx","-g","pid /tmp/nginx.pid; daemon off;"]
+CMD ["nginx","-g","daemon off;"]

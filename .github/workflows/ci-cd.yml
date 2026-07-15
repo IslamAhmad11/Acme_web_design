@@ -2,19 +2,21 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 permissions:
   contents: read
   id-token: write
 
 env:
-  DOCKER_IMAGE: islamahmad9/my-acme-website
+  DOCKER_IMAGE: islamahmad9/acme-web-design
   GKE_PROJECT: ${{ secrets.GKE_PROJECT }}
   GKE_CLUSTER: acme-web-cluster
   GKE_REGION: us-central1
 
 jobs:
+
   build-and-push:
     runs-on: ubuntu-latest
 
@@ -42,32 +44,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Run Trivy Vulnerability Scanner
-        uses: aquasecurity/trivy-action@0.33.1
+      - name: Run Trivy Scan
+        uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.DOCKER_IMAGE }}:latest
+          image-ref: ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
           format: table
           exit-code: 1
           ignore-unfixed: true
           vuln-type: os,library
-          severity: CRITICAL,HIGH
+          severity: HIGH,CRITICAL
 
-  deploy-to-gke:
+  deploy:
     needs: security-scan
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/533499523141/locations/global/workloadIdentityPools/github-final-pool/providers/github-final-provider
-          service_account: terraform-local@project-0504e4c0-5823-4296-881.iam.gserviceaccount.com
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
@@ -80,26 +80,35 @@ jobs:
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GKE_REGION }}
 
-      - name: Deploy to Kubernetes
+      - name: Deploy Application
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/network-policy.yaml
-          kubectl rollout status deployment/my-acme-website --timeout=120s
+
+      - name: Wait for Rollout
+        run: |
+          kubectl rollout status deployment/my-acme-website --timeout=180s
+
+      - name: Kubernetes Status
+        run: |
+          kubectl get deployments
+          kubectl get pods -o wide
+          kubectl get svc
+          kubectl get ingress || true
 
   health-check:
-    needs: deploy-to-gke
+    needs: deploy
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/533499523141/locations/global/workloadIdentityPools/github-final-pool/providers/github-final-provider
-          service_account: terraform-local@project-0504e4c0-5823-4296-881.iam.gserviceaccount.com
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
@@ -112,16 +121,16 @@ jobs:
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GKE_REGION }}
 
-      - name: Get Service External IP
-        id: get-ip
+      - name: Get External IP
+        id: ip
         run: |
           IP=$(kubectl get svc my-acme-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
           echo "external_ip=$IP" >> $GITHUB_OUTPUT
 
-      - name: Install Python Requests
+      - name: Install Requests
         run: pip install requests
 
-      - name: Run Health Check
+      - name: Health Check
         env:
-          APP_URL: http://${{ steps.get-ip.outputs.external_ip }}
+          APP_URL: http://${{ steps.ip.outputs.external_ip }}
         run: python scripts/health_check.py

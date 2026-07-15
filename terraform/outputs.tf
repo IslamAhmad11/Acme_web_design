@@ -12,3 +12,8 @@ output "vpc_name" {
   description = "VPC Name"
   value       = google_compute_network.vpc_network.name
 }
+
+output "load_balancer_ip" {
+  description = "Load Balancer IP"
+  value       = google_container_cluster.primary.endpoint
+}
