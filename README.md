@@ -206,14 +206,12 @@ kubectl get svc
 
 ---
 
-# 👨‍💻 Author
+## 👨‍💻 Author
 
 **Islam Ahmad**
 
 Cloud Engineer
 
-GitHub:
-https://github.com/IslamAhmad11
+- LinkedIn: https://www.linkedin.com/in/islam-ahmad-0692861b4
 
-Docker Hub:
-https://hub.docker.com/r/islamahmad9/acme-web-design
+- Docker Hub: https://hub.docker.com/r/islamahmad9
