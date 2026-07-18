@@ -6,7 +6,7 @@ A production-style Cloud Engineering project demonstrating how to build, secure,
 
 # 📌 Project Overview
 
-This project demonstrates a complete cloud-native deployment workflow starting from a Dockerized application and ending with an automated deployment to Google Kubernetes Engine (GKE) using GitHub Actions CI/CD and Infrastructure as Code (Terraform).
+This project demonstrates a complete cloud-native deployment workflow, starting from a Dockerized application and ending with an automated deployment to Google Kubernetes Engine (GKE). The Google Cloud infrastructure was provisioned using Terraform (Infrastructure as Code), including a custom VPC network, firewall rules, and a GKE cluster, while GitHub Actions automated the CI/CD pipeline.
 
 The project follows production-oriented DevOps practices including:
 
