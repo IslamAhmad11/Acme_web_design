@@ -167,16 +167,20 @@ kubectl get svc
 
 # 📷 Project Screenshots
 
-- ✅ GitHub Repository
-- ✅ GitHub Actions Pipeline
+- ✅ cluster details-console
+- ✅ cluster overview-console
 - ✅ Docker Hub Image
-- ✅ Terraform Apply
-- ✅ GKE Cluster
+- ✅ GitHub Actions Pipeline
 - ✅ Kubernetes Pods
 - ✅ Kubernetes Services
-- ✅ LoadBalancer
+- ✅ services-console
+- ✅ terraform apply-terminal
+- ✅ terraform destroy-terminal
+- ✅ workloads1-console
+- ✅ workloads2-console
+- ✅ workloads3-console
+- ✅ workloads-main-console
 - ✅ Running Website
-
 ---
 
 # 🔐 Security
