@@ -166,7 +166,8 @@ kubectl get svc
 ---
 
 # 📷 Project Screenshots
-The following screenshots are available inside the (screenshots/) folder:
+The following screenshots are available inside the [screenshots Folder]:
+(https://github.com/IslamAhmad11/Acme_web_design/tree/1acbea8c723dc005c2766494f1bbf16f186138fb/screenshots)
 
 - ✅ cluster details-console
 - ✅ cluster overview-console
