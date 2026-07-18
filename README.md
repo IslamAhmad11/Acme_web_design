@@ -24,33 +24,7 @@ The project follows production-oriented DevOps practices including:
 
 # 🏗 Architecture
 
-```
-Developer
-    │
-    ▼
-GitHub Repository
-    │
-    ▼
-GitHub Actions CI/CD
-    │
-    ├── Build Docker Image
-    ├── Push to Docker Hub
-    ├── Trivy Security Scan
-    ├── Deploy to GKE
-    └── Health Check
-    │
-    ▼
-Docker Hub
-    │
-    ▼
-Google Kubernetes Engine
-    │
-    ▼
-LoadBalancer Service
-    │
-    ▼
-Public Website
-```
+<img width="1536" height="1024" alt="architecture diagram" src="https://github.com/user-attachments/assets/85fec4b7-820b-4a43-969c-67fb976d7082" />
 
 ---
 
